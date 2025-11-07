@@ -9,6 +9,7 @@ from data_processor import (
     get_data_from_database,
     calculate_netzbezug_analysis
 )
+from pdf_export import create_pdf_report
 
 st.set_page_config(
     page_title="Netzbezug Analyse",
@@ -104,6 +105,10 @@ with tab2:
         st.error("⚠️ Das Startdatum muss vor dem Enddatum liegen!")
     else:
         if st.button("Auswertung erstellen", type="primary"):
+            pdf_key = f"pdf_{start_date}_{end_date}_{preis_0_5}_{preis_5_24}"
+            if pdf_key in st.session_state:
+                del st.session_state[pdf_key]
+            
             with st.spinner('Lade Daten aus der Datenbank...'):
                 df_filtered = get_data_from_database(
                     start_date=datetime.combine(start_date, datetime.min.time()),
@@ -214,6 +219,49 @@ with tab2:
                     )
                     
                     st.plotly_chart(fig_kosten, use_container_width=True)
+                    
+                    st.divider()
+                    
+                    st.subheader("📥 PDF-Export")
+                    st.write("Laden Sie die komplette Auswertung als PDF-Dokument herunter.")
+                    
+                    pdf_key = f"pdf_{start_date}_{end_date}_{preis_0_5}_{preis_5_24}"
+                    
+                    if pdf_key not in st.session_state:
+                        try:
+                            with st.spinner('Erstelle PDF-Dokument...'):
+                                pdf_bytes = create_pdf_report(
+                                    analysis_df=analysis.iloc[:-1],
+                                    total_0_5=total_0_5,
+                                    total_5_24=total_5_24,
+                                    total_gesamt=total_gesamt,
+                                    kosten_0_5=kosten_0_5,
+                                    kosten_5_24=kosten_5_24,
+                                    kosten_gesamt=kosten_gesamt,
+                                    preis_0_5=preis_0_5,
+                                    preis_5_24=preis_5_24,
+                                    start_date=start_date,
+                                    end_date=end_date,
+                                    fig_bar=fig,
+                                    fig_pie=fig_pie,
+                                    fig_kosten=fig_kosten
+                                )
+                                st.session_state[pdf_key] = pdf_bytes
+                                st.success("✅ PDF wurde erstellt!")
+                        except Exception as e:
+                            st.error(f"❌ Fehler beim Erstellen des PDFs: {str(e)}")
+                            st.session_state[pdf_key] = None
+                    
+                    if st.session_state.get(pdf_key):
+                        filename = f"Netzbezug_Auswertung_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}.pdf"
+                        
+                        st.download_button(
+                            label="📄 PDF herunterladen",
+                            data=st.session_state[pdf_key],
+                            file_name=filename,
+                            mime="application/pdf",
+                            type="primary"
+                        )
 
 st.sidebar.header("ℹ️ Informationen")
 st.sidebar.write("""

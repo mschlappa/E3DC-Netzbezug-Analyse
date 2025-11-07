@@ -10,6 +10,14 @@ import plotly.graph_objects as go
 from io import BytesIO
 import tempfile
 import os
+import subprocess
+
+try:
+    chromium_path = subprocess.check_output(['which', 'chromium'], stderr=subprocess.DEVNULL).decode('utf-8').strip()
+    if chromium_path:
+        os.environ['BROWSER_PATH'] = chromium_path
+except Exception:
+    pass
 
 def create_pdf_report(analysis_df, total_0_5, total_5_24, total_gesamt, 
                      kosten_0_5, kosten_5_24, kosten_gesamt,
@@ -85,10 +93,14 @@ def create_pdf_report(analysis_df, total_0_5, total_5_24, total_gesamt,
     elements.append(heading)
     
     analysis_reset = analysis_df.reset_index()
+    
+    index_name = analysis_df.index.name if analysis_df.index.name else 'index'
+    
     table_data = [['Datum'] + list(analysis_df.columns)]
     
     for _, row in analysis_reset.iterrows():
-        datum_str = row['datum'].strftime('%d.%m.%Y') if hasattr(row['datum'], 'strftime') else str(row['datum'])
+        datum_val = row[index_name]
+        datum_str = datum_val.strftime('%d.%m.%Y') if hasattr(datum_val, 'strftime') else str(datum_val)
         row_data = [datum_str]
         for col in analysis_df.columns:
             row_data.append(f"{row[col]:.2f}")
