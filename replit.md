@@ -2,6 +2,14 @@
 
 This is a Streamlit-based web application for analyzing electricity consumption data from E3DC solar/battery systems. The application allows users to upload CSV files containing energy data (solar direct consumption, battery discharge, grid consumption, and household consumption), stores the data in a database, and provides analytical visualizations of the energy usage patterns. The primary focus is analyzing "Netzbezug" (grid consumption) to understand when and how much electricity is drawn from the power grid, with automatic conversion to kWh and cost calculation in Euros based on configurable electricity prices for different time intervals.
 
+# Recent Changes
+
+**2025-11-07**: 
+- **CRITICAL FIX**: Corrected time interval calculation for "0-5 Uhr". Now correctly uses timestamps 01:00:00-05:00:00 (5 values) instead of 00:00:00-04:00:00. The "5-24 Uhr" interval now correctly covers 06:00:00-00:00:00 (19 values).
+- Added PDF export functionality with ReportLab and Kaleido for professional analysis reports
+- Implemented robust error handling for Chromium/Kaleido dependencies
+- Added session-state-based PDF caching with automatic refresh on new analysis runs
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
