@@ -68,7 +68,7 @@ def create_pdf_report(analysis_df, total_0_5, total_5_24, total_gesamt,
     summary_data = [
         ['Zeitintervall', 'Netzbezug (kWh)', 'Preis (Cent/kWh)', 'Kosten (€)'],
         ['0-5 Uhr', f'{total_0_5:.2f}', f'{preis_0_5:.2f}', f'{kosten_0_5:.2f}'],
-        ['5-24 Uhr', f'{total_5_24:.2f}', f'{preis_5_24:.2f}', f'{kosten_5_24:.2f}'],
+        ['6-23 Uhr', f'{total_5_24:.2f}', f'{preis_5_24:.2f}', f'{kosten_5_24:.2f}'],
         ['Gesamt', f'{total_gesamt:.2f}', '-', f'{kosten_gesamt:.2f}']
     ]
     

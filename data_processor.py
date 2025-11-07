@@ -103,7 +103,7 @@ def calculate_netzbezug_analysis(df):
     df_copy['netzbezug_kwh'] = df_copy['netzbezug'] / 1000
     
     df_copy['zeitintervall'] = df_copy['stunde'].apply(
-        lambda x: '0-5 Uhr' if 0 <= x < 5 else '5-24 Uhr'
+        lambda x: '0-5 Uhr' if 0 <= x <= 5 else '6-23 Uhr'
     )
     
     summary = df_copy.groupby(['datum', 'zeitintervall'])['netzbezug_kwh'].sum().reset_index()
@@ -113,16 +113,16 @@ def calculate_netzbezug_analysis(df):
     
     if '0-5 Uhr' not in pivot_table.columns:
         pivot_table['0-5 Uhr'] = 0
-    if '5-24 Uhr' not in pivot_table.columns:
-        pivot_table['5-24 Uhr'] = 0
+    if '6-23 Uhr' not in pivot_table.columns:
+        pivot_table['6-23 Uhr'] = 0
     
-    pivot_table = pivot_table[['0-5 Uhr', '5-24 Uhr']]
+    pivot_table = pivot_table[['0-5 Uhr', '6-23 Uhr']]
     
-    pivot_table['Gesamt'] = pivot_table['0-5 Uhr'] + pivot_table['5-24 Uhr']
+    pivot_table['Gesamt'] = pivot_table['0-5 Uhr'] + pivot_table['6-23 Uhr']
     
     total_row = pd.DataFrame({
         '0-5 Uhr': [pivot_table['0-5 Uhr'].sum()],
-        '5-24 Uhr': [pivot_table['5-24 Uhr'].sum()],
+        '6-23 Uhr': [pivot_table['6-23 Uhr'].sum()],
         'Gesamt': [pivot_table['Gesamt'].sum()]
     }, index=['Gesamt'])
     
