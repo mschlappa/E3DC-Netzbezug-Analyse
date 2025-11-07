@@ -100,13 +100,16 @@ def calculate_netzbezug_analysis(df):
     df_copy['stunde'] = df_copy['zeitstempel'].dt.hour
     df_copy['datum'] = df_copy['zeitstempel'].dt.date
     
+    df_copy['netzbezug_kwh'] = df_copy['netzbezug'] / 1000
+    
     df_copy['zeitintervall'] = df_copy['stunde'].apply(
         lambda x: '0-5 Uhr' if 0 <= x < 5 else '5-24 Uhr'
     )
     
-    summary = df_copy.groupby(['datum', 'zeitintervall'])['netzbezug'].sum().reset_index()
+    summary = df_copy.groupby(['datum', 'zeitintervall'])['netzbezug_kwh'].sum().reset_index()
     
-    pivot_table = summary.pivot(index='datum', columns='zeitintervall', values='netzbezug').fillna(0)
+    pivot_table = summary.pivot(index='datum', columns='zeitintervall', values='netzbezug_kwh').fillna(0)
+    pivot_table.index.name = 'datum'
     
     if '0-5 Uhr' not in pivot_table.columns:
         pivot_table['0-5 Uhr'] = 0

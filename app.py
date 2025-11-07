@@ -77,6 +77,29 @@ with tab2:
             help="Wählen Sie das Enddatum für die Auswertung"
         )
     
+    st.subheader("Strompreise")
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        preis_0_5 = st.number_input(
+            "Strompreis 0-5 Uhr (Cent/kWh)",
+            min_value=0.0,
+            max_value=100.0,
+            value=14.85,
+            step=0.01,
+            help="Strompreis im Tageszeitintervall 0-5 Uhr in Cent pro kWh"
+        )
+    
+    with col4:
+        preis_5_24 = st.number_input(
+            "Strompreis 5-24 Uhr (Cent/kWh)",
+            min_value=0.0,
+            max_value=100.0,
+            value=25.85,
+            step=0.01,
+            help="Strompreis im Tageszeitintervall 5-24 Uhr in Cent pro kWh"
+        )
+    
     if start_date > end_date:
         st.error("⚠️ Das Startdatum muss vor dem Enddatum liegen!")
     else:
@@ -99,27 +122,51 @@ with tab2:
                 analysis = calculate_netzbezug_analysis(df_filtered)
                 
                 if analysis is not None:
+                    st.subheader("Netzbezug in kWh")
                     st.dataframe(
-                        analysis.style.format("{:.0f} W"),
+                        analysis.style.format("{:.2f} kWh"),
                         use_container_width=True
                     )
                     
-                    st.subheader("Visualisierung")
+                    total_0_5 = analysis.loc['Gesamt', '0-5 Uhr']
+                    total_5_24 = analysis.loc['Gesamt', '5-24 Uhr']
+                    total_gesamt = analysis.loc['Gesamt', 'Gesamt']
+                    
+                    kosten_0_5 = (total_0_5 * preis_0_5) / 100
+                    kosten_5_24 = (total_5_24 * preis_5_24) / 100
+                    kosten_gesamt = kosten_0_5 + kosten_5_24
+                    
+                    st.subheader("Gesamtübersicht")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        st.metric("Netzbezug 0-5 Uhr", f"{total_0_5:,.2f} kWh")
+                        st.metric("Kosten 0-5 Uhr", f"{kosten_0_5:,.2f} €")
+                    
+                    with col2:
+                        st.metric("Netzbezug 5-24 Uhr", f"{total_5_24:,.2f} kWh")
+                        st.metric("Kosten 5-24 Uhr", f"{kosten_5_24:,.2f} €")
+                    
+                    with col3:
+                        st.metric("Gesamt Netzbezug", f"{total_gesamt:,.2f} kWh")
+                        st.metric("Gesamtkosten", f"{kosten_gesamt:,.2f} €")
+                    
+                    st.subheader("Visualisierung Netzbezug")
                     
                     analysis_without_total = analysis.iloc[:-1].copy()
-                    analysis_without_total = analysis_without_total.reset_index()
                     
                     fig = go.Figure()
                     
                     fig.add_trace(go.Bar(
-                        x=analysis_without_total['datum'],
+                        x=analysis_without_total.index,
                         y=analysis_without_total['0-5 Uhr'],
                         name='0-5 Uhr',
                         marker_color='#636EFA'
                     ))
                     
                     fig.add_trace(go.Bar(
-                        x=analysis_without_total['datum'],
+                        x=analysis_without_total.index,
                         y=analysis_without_total['5-24 Uhr'],
                         name='5-24 Uhr',
                         marker_color='#EF553B'
@@ -129,29 +176,12 @@ with tab2:
                         barmode='group',
                         title='Netzbezug nach Tageszeitintervallen',
                         xaxis_title='Datum',
-                        yaxis_title='Netzbezug (W)',
+                        yaxis_title='Netzbezug (kWh)',
                         hovermode='x unified',
                         height=500
                     )
                     
                     st.plotly_chart(fig, use_container_width=True)
-                    
-                    st.subheader("Gesamtübersicht")
-                    
-                    total_0_5 = analysis.loc['Gesamt', '0-5 Uhr']
-                    total_5_24 = analysis.loc['Gesamt', '5-24 Uhr']
-                    total_gesamt = analysis.loc['Gesamt', 'Gesamt']
-                    
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        st.metric("Netzbezug 0-5 Uhr", f"{total_0_5:,.0f} W")
-                    
-                    with col2:
-                        st.metric("Netzbezug 5-24 Uhr", f"{total_5_24:,.0f} W")
-                    
-                    with col3:
-                        st.metric("Gesamt Netzbezug", f"{total_gesamt:,.0f} W")
                     
                     fig_pie = go.Figure(data=[go.Pie(
                         labels=['0-5 Uhr', '5-24 Uhr'],
@@ -160,11 +190,30 @@ with tab2:
                     )])
                     
                     fig_pie.update_layout(
-                        title='Verteilung Netzbezug nach Tageszeitintervallen',
+                        title='Verteilung Netzbezug nach Tageszeitintervallen (kWh)',
                         height=400
                     )
                     
                     st.plotly_chart(fig_pie, use_container_width=True)
+                    
+                    st.subheader("Visualisierung Kosten")
+                    
+                    fig_kosten = go.Figure(data=[go.Bar(
+                        x=['0-5 Uhr', '5-24 Uhr', 'Gesamt'],
+                        y=[kosten_0_5, kosten_5_24, kosten_gesamt],
+                        marker_color=['#636EFA', '#EF553B', '#00CC96'],
+                        text=[f"{kosten_0_5:.2f} €", f"{kosten_5_24:.2f} €", f"{kosten_gesamt:.2f} €"],
+                        textposition='auto'
+                    )])
+                    
+                    fig_kosten.update_layout(
+                        title='Stromkosten nach Tageszeitintervallen',
+                        xaxis_title='Zeitintervall',
+                        yaxis_title='Kosten (€)',
+                        height=400
+                    )
+                    
+                    st.plotly_chart(fig_kosten, use_container_width=True)
 
 st.sidebar.header("ℹ️ Informationen")
 st.sidebar.write("""
@@ -179,6 +228,9 @@ Diese Anwendung analysiert Ihren Stromnetzbezug aus E3DC-Exportdateien.
 - Auswertung nach Tageszeitintervallen:
   - 0-5 Uhr (Nachtzeit)
   - 5-24 Uhr (Tagzeit)
+- Anzeige in kWh (Kilowattstunden)
+- Strompreis-Kalkulation
+- Kostenberechnung in Euro
 - Visualisierungen und Statistiken
 
 **Datenformat:**
@@ -188,4 +240,7 @@ Die CSV-Datei sollte folgende Spalten enthalten:
 - Batterie Entladen [W]
 - Netzbezug [W]
 - Hausverbrauch [W]
+
+**Hinweis:**
+Die Werte in der CSV sind in Watt (W) pro Stunde angegeben und werden automatisch in Kilowattstunden (kWh) umgerechnet.
 """)
