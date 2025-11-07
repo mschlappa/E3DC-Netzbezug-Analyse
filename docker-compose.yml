@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: netzbezug_db
+    environment:
+      POSTGRES_USER: netzbezug_user
+      POSTGRES_PASSWORD: netzbezug_password
+      POSTGRES_DB: netzbezug_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U netzbezug_user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: netzbezug_app
+    environment:
+      DATABASE_URL: postgresql://netzbezug_user:netzbezug_password@db:5432/netzbezug_db
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
