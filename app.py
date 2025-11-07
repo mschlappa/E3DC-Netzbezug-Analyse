@@ -108,7 +108,6 @@ with tab2:
                     
                     analysis_without_total = analysis.iloc[:-1].copy()
                     analysis_without_total = analysis_without_total.reset_index()
-                    analysis_without_total['datum'] = pd.to_datetime(analysis_without_total['datum'])
                     
                     fig = go.Figure()
                     
